@@ -4,16 +4,16 @@
   <ul class="nav--actions">
     {% if user.is_authenticated %}
       <li class="logged-user">
-        Witaj {{ user.name }}
+        Witaj {{ user.first_name }}
         <ul class="dropdown">
           <li><a href="#">Profil</a></li>
           <li><a href="#">Ustawienia</a></li>
-          <li><a href="#">Wyloguj</a></li>
+          <li><a href="{% url 'users:logout' %}">Wyloguj</a></li>
         </ul>
       </li>
     {% else %}
-      <li><a href="" class="btn btn--small btn--without-border">Zaloguj</a></li>
-      <li><a href="#" class="btn btn--small btn--highlighted">Załóż konto</a></li>
+      <li><a href="{% url 'users:login' %}" class="btn btn--small btn--without-border">Zaloguj</a></li>
+      <li><a href="{% url 'users:register' %}" class="btn btn--small btn--highlighted">Załóż konto</a></li>
     {% endif %}
   </ul>
 
