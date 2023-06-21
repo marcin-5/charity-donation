@@ -1,4 +1,4 @@
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
@@ -14,6 +14,13 @@ def logout_view(request):
 class LoginView(View):
     def get(self, request):
         return render(request, "users/login.html")
+
+    def post(self, request):
+        if user := authenticate(email=request.POST.get("email"), password=request.POST.get("password")):
+            if user.is_active:
+                login(request, user)
+                return redirect(reverse("home:home"))
+        return redirect(reverse("users:register"))
 
 
 class RegisterView(View):
