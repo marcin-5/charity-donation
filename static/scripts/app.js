@@ -198,7 +198,12 @@ class FormSteps {
 
     // first step
     const chk1 = this.$form.querySelectorAll("#step1-chk");
-    chk1.forEach(box => box.addEventListener("click", e => this.step1(this.$next[0], chk1)));
+    chk1.forEach(box => box.addEventListener("click", e => this.step1(chk1)));
+
+    // second step
+    const input = this.$form.querySelector("#step2-input");
+    input.addEventListener("change", e => this.step2(input));
+    input.addEventListener("keydown", e => this.step2(input));
 
     // Next step
     this.$next.forEach(btn => {
@@ -223,8 +228,13 @@ class FormSteps {
   }
 
   // Make button active if any checkbox selected for step 1
-  step1(btn, chk) {
-    btn.disabled = ![...chk].some(e => e.checked === true);
+  step1(chk) {
+    this.$next[0].disabled = ![...chk].some(e => e.checked === true);
+  }
+
+  // Make button active if number of bugs > 0
+  step2(input) {
+    this.$next[1].disabled = !parseInt(input.value) > 0 || isNaN(parseInt(input.value));
   }
 
   /**
