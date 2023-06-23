@@ -35,7 +35,7 @@ def get_institutions(request):
     if request.method == "POST":
         categories = list(map(int, request.POST["categories"].split(",")))
         return HttpResponse(
-            serializers.serialize("json", Institution.objects.filter(categories__in=categories)),
+            serializers.serialize("json", Institution.objects.filter(categories__in=categories).distinct()),
             content_type="application/json",
         )
     else:
