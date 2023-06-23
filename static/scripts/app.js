@@ -177,6 +177,7 @@ class FormSteps {
     this.$stepInstructions = form.querySelectorAll(".form--steps-instructions p");
     const $stepForms = form.querySelectorAll("form > div");
     this.slides = [...this.$stepInstructions, ...$stepForms];
+    this.institutions = [];
 
     this.init();
   }
@@ -211,6 +212,32 @@ class FormSteps {
         e.preventDefault();
         this.currentStep++;
         this.updateForm();
+        if (this.currentStep === 2) {
+          const categories = [...chk1].filter(box => box.checked).map(box => box.value);
+          if (categories.length > 0) this.getInstitutions(categories);
+        }
+        if (this.currentStep === 3) {
+          const parent = document.querySelector('div[data-step="3"]');
+          let lastChild = parent.children[0];
+          for (const i of this.institutions) {
+            const div = document.createElement("div");
+            div.setAttribute("class", "form-group form-group--checkbox");
+            div.innerHTML =
+              `            <label>
+              <input id="step3-input" type="radio" name="organization" value="${i.pk}"/>
+              <span class="checkbox radio"></span>
+              <span class="description">
+                  <div class="title">${i.fields.name}</div>
+                  <div class="subtitle">${i.fields.description}</div>
+                </span>
+            </label>
+`
+            parent.insertBefore(div, lastChild.nextSibling);
+            lastChild = div;
+          }
+          const inputs = this.$form.querySelectorAll("#step3-input");
+          inputs.forEach(i => i.addEventListener("click", () => this.$next[2].disabled = false))
+        }
       });
     });
 
@@ -232,7 +259,7 @@ class FormSteps {
     this.$next[0].disabled = ![...chk].some(e => e.checked === true);
   }
 
-  // Make button active if number of bugs > 0
+  // Make button active if number of bags > 0
   step2(input) {
     this.$next[1].disabled = !parseInt(input.value) > 0 || isNaN(parseInt(input.value));
   }
@@ -270,6 +297,35 @@ class FormSteps {
     this.currentStep++;
     this.updateForm();
   }
+
+  getCookie(name) {
+    let cookie = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
+    return cookie ? cookie[2] : null;
+  }
+
+  getInstitutions(categories) {
+    const data = new FormData();
+    data.append("categories", categories);
+
+    fetch("/institutions/", {
+      method: "post",
+      headers: {
+        "X-CSRFToken": this.getCookie("csrftoken"),
+      },
+      body: data
+    })
+      .then((res) => {
+        return res.json()
+      })
+      .then(json => {
+        this.institutions = [];
+        for (const i of json) this.institutions.push(i);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
 }
 
 const form = document.querySelector(".form--steps");

@@ -1,4 +1,6 @@
+from django.core import serializers
 from django.db.models import Sum
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
@@ -24,5 +26,17 @@ class AddDonationView(View):
             return redirect(reverse("users:login"))
         ctx = {
             "categories": Category.objects.all(),
+            "institutions": Institution.objects.all(),
         }
         return render(request, "home/form.html", ctx)
+
+
+def get_institutions(request):
+    if request.method == "POST":
+        categories = list(map(int, request.POST["categories"].split(",")))
+        return HttpResponse(
+            serializers.serialize("json", Institution.objects.filter(categories__in=categories)),
+            content_type="application/json",
+        )
+    else:
+        return HttpResponseNotFound("404")
