@@ -1,8 +1,9 @@
 from django.db.models import Sum
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views import View
 
-from home.models import Donation, Institution
+from home.models import Donation, Institution, Category
 
 
 class LandingPageView(View):
@@ -19,4 +20,9 @@ class LandingPageView(View):
 
 class AddDonationView(View):
     def get(self, request):
-        return render(request, "home/form.html")
+        if not request.user.is_authenticated:
+            return redirect(reverse("users:login"))
+        ctx = {
+            "categories": Category.objects.all(),
+        }
+        return render(request, "home/form.html", ctx)
