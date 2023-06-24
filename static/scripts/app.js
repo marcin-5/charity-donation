@@ -178,6 +178,7 @@ class FormSteps {
     const $stepForms = form.querySelectorAll("form > div");
     this.slides = [...this.$stepInstructions, ...$stepForms];
     this.categories = {}; // {category.id: [checked, category.name]}
+    this.selectedCategories = [];
     this.institutions = []; // list of institutions with relevant categories
     this.bags = 0;
     this.dest = {}; // {institution.id: institution.name}
@@ -255,7 +256,8 @@ class FormSteps {
     this.$step.innerText = this.currentStep;
 
       if (this.currentStep === 2) {
-        this.getInstitutions(Object.entries(this.categories).filter(([_, v]) => v[0]).map(e => e[0]));
+        this.selectedCategories = Object.entries(this.categories).filter(([_, v]) => v[0]).map(e => e[0]);
+        this.getInstitutions(this.selectedCategories);
       }
       if (this.currentStep === 3) {
         const parent = form.querySelector('div[data-step="3"]');
@@ -324,12 +326,44 @@ class FormSteps {
   submit(e) {
     e.preventDefault();
     this.currentStep++;
-    this.updateForm();
+    this.addDonation();
   }
 
   getCookie(name) {
     let cookie = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
     return cookie ? cookie[2] : null;
+  }
+
+  addDonation() {
+    const data = new FormData();
+    data.append("quantity", this.bags);
+    data.append("categories", this.selectedCategories);
+    data.append("institution_id", Object.keys(this.dest)[0]);
+    data.append("address", this.address["address"]);
+    data.append("phone_number", this.address["phone"]);
+    data.append("city", this.address["city"]);
+    data.append("zip_code", this.address["postcode"]);
+    data.append("pick_up_date", this.address["data"]);
+    data.append("pick_up_time", this.address["time"]);
+    data.append("pick_up_comment", this.address["more-info"]);
+
+    fetch("/add-donation/", {
+      method: "post",
+      headers: {
+        "X-CSRFToken": this.getCookie("csrftoken"),
+      },
+      body: data
+    })
+      .then((res) => {
+        return res.json()
+      })
+      .then(json => {
+        console.log(json);
+        window.location.href = "/form-confirmation/"
+      })
+      .catch(err => {
+        this.currentStep = 1;
+      });
   }
 
   getInstitutions(categories) {
