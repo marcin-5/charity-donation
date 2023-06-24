@@ -212,7 +212,7 @@ class FormSteps {
 
     // second step
     this.$form.querySelector("#step2-input").addEventListener("input", e => {
-      this.bags = e.target.value;
+      this.bags = parseInt(e.target.value);
       this.$next[1].disabled = !parseInt(e.target.value) > 0 || isNaN(parseInt(e.target.value));
     });
 
@@ -295,7 +295,25 @@ class FormSteps {
     this.$stepInstructions[0].parentElement.parentElement.hidden = this.currentStep >= 6;
     this.$step.parentElement.hidden = this.currentStep >= 6;
 
-    // TODO: get data from inputs and show them in summary
+    // summary steps 1 and 2
+    let bag = "worek";
+    let contains = "zawiera";
+    if (this.bags !== 1) {
+      const r10 = this.bags % 10;
+      const r100 = this.bags % 100;
+      bag = (r10 > 4 || r10 < 2 || (11 < r100 < 15)) ? "worków" : "worki";
+      if (!(r10 > 4 || r10 < 2 || (11 < r100 < 15))) contains = "zawierają";
+    }
+    const categories = Object.values(this.categories).filter(c => c[0]).map(c => c[1]).join(", ");
+    document.getElementById("step6-what").innerText = `${this.bags} ${bag} ${contains}:\n${categories}.`;
+    // summary step 3
+    const iName = this.dest[Object.keys(this.dest)[0]];
+    document.getElementById("step6-whom").innerText = `Dla ${iName}.`;
+    // summary step 4
+    this.address["more-info"] = this.$form.querySelector("textarea[name='more_info']").value || "Brak uwag";
+    const address = Object.keys(this.address).map(key => `<li>${this.address[key]}</li>`);
+    document.getElementById("step6-address").innerHTML = address.slice(0, -3).join("\n");
+    document.getElementById("step6-pickup").innerHTML = address.slice(-3).join("\n");
   }
 
   /**
