@@ -177,7 +177,11 @@ class FormSteps {
     this.$stepInstructions = form.querySelectorAll(".form--steps-instructions p");
     const $stepForms = form.querySelectorAll("form > div");
     this.slides = [...this.$stepInstructions, ...$stepForms];
-    this.institutions = [];
+    this.categories = {}; // {category.id: [checked, category.name]}
+    this.institutions = []; // list of institutions with relevant categories
+    this.bags = 0;
+    this.dest = {}; // {institution.id: institution.name}
+    this.address = {}; // {input.name: input.value}
 
     this.init();
   }
@@ -186,6 +190,8 @@ class FormSteps {
    * Init all methods
    */
   init() {
+    // disable all "next" buttons
+    this.$next.forEach(btn => btn.disabled = true);
     this.events();
     this.updateForm();
   }
@@ -194,21 +200,30 @@ class FormSteps {
    * All events that are happening in form
    */
   events() {
-    // disable all "next" buttons
-    this.$next.forEach(btn => btn.disabled = true)
 
     // first step
-    const chk1 = this.$form.querySelectorAll("#step1-chk");
-    chk1.forEach(box => box.addEventListener("click", e => this.step1(chk1)));
+    this.$form.querySelectorAll("#step1-id").forEach(box => {
+      this.categories[box.value] = [box.checked, box.parentElement.querySelector("#step1-desc").innerText];
+      box.addEventListener("click", (e) => {
+        this.categories[e.target.value][0] = e.target.checked;
+        this.$next[0].disabled = !Object.values(this.categories).some(e => e[0] === true);
+      });
+    });
 
     // second step
-    const input = this.$form.querySelector("#step2-input");
-    input.addEventListener("change", e => this.step2(input));
-    input.addEventListener("keydown", e => this.step2(input));
+    this.$form.querySelector("#step2-input").addEventListener("input", e => {
+      this.bags = e.target.value;
+      this.$next[1].disabled = !parseInt(e.target.value) > 0 || isNaN(parseInt(e.target.value));
+    });
 
     // fourth step
-    const inputs = this.$form.querySelector('div[data-step="4"]').getElementsByTagName("input");
-    [...inputs].forEach(i => i.addEventListener("change", () => this.step4(inputs)));
+    [...this.$form.querySelector('div[data-step="4"]').getElementsByTagName("input")].forEach(i => {
+      this.address[i.name] = i.value;
+      i.addEventListener("change", e => {
+        this.address[e.target.name] = e.target.value;
+        this.$next[3].disabled = Object.values(this.address).some(i => i === "");
+      });
+    });
 
     // Next step
     this.$next.forEach(btn => {
@@ -216,32 +231,6 @@ class FormSteps {
         e.preventDefault();
         this.currentStep++;
         this.updateForm();
-        if (this.currentStep === 2) {
-          const categories = [...chk1].filter(box => box.checked).map(box => box.value);
-          if (categories.length > 0) this.getInstitutions(categories);
-        }
-        if (this.currentStep === 3) {
-          const parent = document.querySelector('div[data-step="3"]');
-          let lastChild = parent.children[0];
-          for (const i of this.institutions) {
-            const div = document.createElement("div");
-            div.setAttribute("class", "form-group form-group--checkbox");
-            div.innerHTML =
-              `            <label>
-              <input id="step3-input" type="radio" name="organization" value="${i.pk}"/>
-              <span class="checkbox radio"></span>
-              <span class="description">
-                  <div class="title">${i.fields.name}</div>
-                  <div class="subtitle">${i.fields.description}</div>
-                </span>
-            </label>
-`
-            parent.insertBefore(div, lastChild.nextSibling);
-            lastChild = div;
-          }
-          const inputs = this.$form.querySelectorAll("#step3-input");
-          inputs.forEach(i => i.addEventListener("click", () => this.$next[2].disabled = false))
-        }
       });
     });
 
@@ -258,27 +247,40 @@ class FormSteps {
     this.$form.querySelector("form").addEventListener("submit", e => this.submit(e));
   }
 
-  // Make button active if any checkbox selected for step 1
-  step1(chk) {
-    this.$next[0].disabled = ![...chk].some(e => e.checked === true);
-  }
-
-  // Make button active if number of bags > 0
-  step2(input) {
-    this.$next[1].disabled = !parseInt(input.value) > 0 || isNaN(parseInt(input.value));
-  }
-
-  // Make button active when all input fields aren't empty
-  step4(inputs) {
-    this.$next[3].disabled = [...inputs].some(e => e.value === "");
-  }
-
   /**
    * Update form front-end
    * Show next or previous section etc.
    */
   updateForm() {
     this.$step.innerText = this.currentStep;
+
+      if (this.currentStep === 2) {
+        this.getInstitutions(Object.entries(this.categories).filter(([_, v]) => v[0]).map(e => e[0]));
+      }
+      if (this.currentStep === 3) {
+        const parent = form.querySelector('div[data-step="3"]');
+        let lastChild = parent.children[0];
+        for (const i of this.institutions) {
+          const div = document.createElement("div");
+          div.setAttribute("class", "form-group form-group--checkbox");
+          div.innerHTML =
+`         <label>
+            <input id="step3-input" type="radio" name="organization" value="${i.pk}"/>
+            <span class="checkbox radio"></span>
+            <span class="description">
+              <div id="step3-dest" class="title">${i.fields.name}</div>
+              <div class="subtitle">${i.fields.description}</div>
+            </span>
+          </label>
+`;
+          parent.insertBefore(div, lastChild.nextSibling);
+          lastChild = div;
+        }
+        this.$form.querySelectorAll("#step3-input").forEach(i => i.addEventListener("click", e => {
+          this.dest = {[e.target.value]: e.target.parentElement.querySelector("#step3-dest").innerText};
+          this.$next[2].disabled = false;
+        }));
+      }
 
     // TODO: Validation
 
