@@ -206,6 +206,10 @@ class FormSteps {
     input.addEventListener("change", e => this.step2(input));
     input.addEventListener("keydown", e => this.step2(input));
 
+    // fourth step
+    const inputs = this.$form.querySelector('div[data-step="4"]').getElementsByTagName("input");
+    [...inputs].forEach(i => i.addEventListener("change", () => this.step4(inputs)));
+
     // Next step
     this.$next.forEach(btn => {
       btn.addEventListener("click", e => {
@@ -262,6 +266,11 @@ class FormSteps {
   // Make button active if number of bags > 0
   step2(input) {
     this.$next[1].disabled = !parseInt(input.value) > 0 || isNaN(parseInt(input.value));
+  }
+
+  // Make button active when all input fields aren't empty
+  step4(inputs) {
+    this.$next[3].disabled = [...inputs].some(e => e.value === "");
   }
 
   /**
