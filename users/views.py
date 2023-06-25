@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
@@ -34,3 +36,11 @@ class RegisterView(View):
     def post(self, request):
         ctx = self._create_ctx(request.POST)
         return redirect(reverse("users:login")) if Account.objects.create_user(**ctx) else self.get(request, **ctx)
+
+
+@login_required
+def account_detail(request):
+    if request.method == "GET":
+        return render(request, "users/account-detail.html")
+    else:
+        return HttpResponseNotFound("404")

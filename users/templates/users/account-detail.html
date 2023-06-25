@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% endblock %}
+
+{% block header %}
+  <header>
+    {{ block.super }}
+  </header>
+{% endblock header %}
+
+{% block content %}
+  <section class="login-page">
+    <h2>Profil:</h2>
+    <div class="contact">
+      <h3>Imię: {{ request.user.first_name }}</h3>
+      <h3>Nazwisko: {{ request.user.last_name }}</h3>
+      <h3>Email: {{ request.user.email }}</h3>
+    </div>
+  </section>
+{% endblock %}
