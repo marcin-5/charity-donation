@@ -21,8 +21,11 @@ class Institution(models.Model):
     type = models.CharField(max_length=2, choices=OrganisationType.choices, default=OrganisationType.F)
     categories = models.ManyToManyField(Category)
 
+    class Meta:
+        ordering = ("type", "name")
+
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.get_type_display()})"
 
 
 class Donation(models.Model):
