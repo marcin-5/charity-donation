@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 
+from home.models import Donation
 from users.models import Account
 
 
@@ -41,6 +42,6 @@ class RegisterView(View):
 @login_required
 def account_detail(request):
     if request.method == "GET":
-        return render(request, "users/account-detail.html")
+        return render(request, "users/account-detail.html", {"donations": Donation.objects.filter(user=request.user)})
     else:
         return HttpResponseNotFound("404")
