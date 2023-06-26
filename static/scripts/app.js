@@ -7,10 +7,14 @@ class Help {
     this.$buttonsContainer = $el.querySelector(".help--buttons");
     this.$slidesContainers = $el.querySelectorAll(".help--slides");
     this.currentSlide = this.$buttonsContainer.querySelector(".active").parentElement.dataset.id;
+    this.institutionsPage = {current: 1};
+    this.institutionsData = {};
+    this.institutionsType = "F";
     this.init();
   }
 
   init() {
+    this.generateInstitutionsList(this.institutionsPage.current, this.institutionsType);
     this.events();
   }
 
@@ -53,6 +57,25 @@ class Help {
         el.classList.add("active");
       }
     });
+    const types= {1: "F", 2: "OP", 3: "ZL"};
+    this.institutionsType = types[this.currentSlide];
+    this.generateInstitutionsList(1, types[this.currentSlide]);
+    // this.addPagination();
+  }
+
+  // Pagination
+  addPagination() {
+    const parent = this.$slidesContainers[this.currentSlide - 1].querySelector("ul.help--slides-pagination");
+    const li = document.createElement("li");
+    for (let i = 1; i <= this.institutionsPage.num_pages; i++) {
+      const a = document.createElement("a");
+      a.className = `btn btn--small btn--without-border${i === this.institutionsPage.current ? ' active' : ''}`;
+      a.setAttribute("data-page", `${i}`);
+      a.innerText = `${i}`;
+      li.appendChild(a);
+    }
+    if (parent.firstElementChild) parent.firstElementChild.remove();
+    parent.appendChild(li);
   }
 
   /**
@@ -61,8 +84,48 @@ class Help {
   changePage(e) {
     e.preventDefault();
     const page = e.target.dataset.page;
-
     console.log(page);
+    this.generateInstitutionsList(page, this.institutionsType);
+  }
+
+  async fetchInstitutionsData(page = 1, type = "") {
+    const response = await fetch(`institutions.json?page=${page}&type=${type}`, {
+      method: "get",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+    });
+    return await response.json();
+  }
+
+  generateInstitutionsList(page = 1, type = "") {
+    this.fetchInstitutionsData(page, type).then(json => {
+      this.institutionsPage = json.page;
+      this.institutionsData = JSON.parse(json.data);
+      // console.log(this.institutionsPage);
+      // console.log(this.institutionsData);
+      const parent = this.$slidesContainers[this.currentSlide-1].querySelector("ul.help--slides-items");
+      while (parent.firstElementChild) parent.firstElementChild.remove();
+      for (const i in this.institutionsData) {
+        const li = document.createElement("li");
+        const col1 = document.createElement("div");
+        const col2 = document.createElement("div");
+        const title = document.createElement("div");
+        const subtitle = document.createElement("div");
+        const categories = document.createElement("div");
+        col1.className = col2.className = "col";
+        title.className = "title";
+        subtitle.className = "subtitle";
+        title.innerText = this.institutionsData[i].fields.name;
+        subtitle.innerText = this.institutionsData[i].fields.description;
+        categories.className = "text";
+        categories.innerText = json.categories[i].join(", ");
+        li.appendChild(col1).appendChild(title).appendChild(subtitle);
+        li.appendChild(col2).appendChild(categories);
+        parent.appendChild(li);
+        this.addPagination();
+      }
+    });
   }
 }
 
@@ -255,18 +318,18 @@ class FormSteps {
   updateForm() {
     this.$step.innerText = this.currentStep;
 
-      if (this.currentStep === 2) {
-        this.selectedCategories = Object.entries(this.categories).filter(([_, v]) => v[0]).map(e => e[0]);
-        this.getInstitutions(this.selectedCategories);
-      }
-      if (this.currentStep === 3) {
-        const parent = form.querySelector('div[data-step="3"]');
-        let lastChild = parent.children[0];
-        for (const i of this.institutions) {
-          const div = document.createElement("div");
-          div.setAttribute("class", "form-group form-group--checkbox");
-          div.innerHTML =
-`         <label>
+    if (this.currentStep === 2) {
+      this.selectedCategories = Object.entries(this.categories).filter(([_, v]) => v[0]).map(e => e[0]);
+      this.getInstitutions(this.selectedCategories);
+    }
+    if (this.currentStep === 3) {
+      const parent = form.querySelector('div[data-step="3"]');
+      let lastChild = parent.children[0];
+      for (const i of this.institutions) {
+        const div = document.createElement("div");
+        div.setAttribute("class", "form-group form-group--checkbox");
+        div.innerHTML =
+          `         <label>
             <input id="step3-input" type="radio" name="organization" value="${i.pk}"/>
             <span class="checkbox radio"></span>
             <span class="description">
@@ -275,14 +338,14 @@ class FormSteps {
             </span>
           </label>
 `;
-          parent.insertBefore(div, lastChild.nextSibling);
-          lastChild = div;
-        }
-        this.$form.querySelectorAll("#step3-input").forEach(i => i.addEventListener("click", e => {
-          this.dest = {[e.target.value]: e.target.parentElement.querySelector("#step3-dest").innerText};
-          this.$next[2].disabled = false;
-        }));
+        parent.insertBefore(div, lastChild.nextSibling);
+        lastChild = div;
       }
+      this.$form.querySelectorAll("#step3-input").forEach(i => i.addEventListener("click", e => {
+        this.dest = {[e.target.value]: e.target.parentElement.querySelector("#step3-dest").innerText};
+        this.$next[2].disabled = false;
+      }));
+    }
 
     // TODO: Validation
 
@@ -329,11 +392,6 @@ class FormSteps {
     this.addDonation();
   }
 
-  getCookie(name) {
-    let cookie = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
-    return cookie ? cookie[2] : null;
-  }
-
   addDonation() {
     const data = new FormData();
     data.append("quantity", this.bags);
@@ -350,7 +408,7 @@ class FormSteps {
     fetch("/add-donation/", {
       method: "post",
       headers: {
-        "X-CSRFToken": this.getCookie("csrftoken"),
+        "X-CSRFToken": getCookie("csrftoken"),
       },
       body: data
     })
@@ -373,7 +431,7 @@ class FormSteps {
     fetch("/institutions/", {
       method: "post",
       headers: {
-        "X-CSRFToken": this.getCookie("csrftoken"),
+        "X-CSRFToken": getCookie("csrftoken"),
       },
       body: data
     })
@@ -394,4 +452,9 @@ class FormSteps {
 const form = document.querySelector(".form--steps");
 if (form !== null) {
   new FormSteps(form);
+}
+
+function getCookie(name) {
+  let cookie = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
+  return cookie ? cookie[2] : null;
 }
