@@ -129,7 +129,7 @@ class Help {
   }
 }
 
-const helpSection = document.querySelector(".help");
+const helpSection = document.querySelector("#help");
 if (helpSection !== null) {
   new Help(helpSection);
 }
