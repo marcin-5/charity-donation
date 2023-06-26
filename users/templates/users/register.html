@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% endblock %}
+{% block title %}{% if uid %}Edycja danych{% else %}Załóż konto{% endif %}{% endblock %}
 
 {% block header %}
   <header>
@@ -11,29 +11,50 @@
 
 {% block content %}
   <section class="login-page">
-    <h2>Załóż konto</h2>
-    <form method="POST">
-      {% csrf_token %}
-      <div class="form-group">
-        <input type="text" name="first_name" value="{{ first_name }}" placeholder="Imię"/>
-      </div>
-      <div class="form-group">
-        <input type="text" name="last_name" value="{{ last_name }}" placeholder="Nazwisko"/>
-      </div>
-      <div class="form-group">
-        <input type="email" name="email" value="{{ email }}" placeholder="Email"/>
-      </div>
-      <div class="form-group">
-        <input type="password" name="password" placeholder="Hasło"/>
-      </div>
-      <div class="form-group">
-        <input type="password" name="password2" placeholder="Powtórz hasło"/>
-      </div>
+    {% if uid != request.user.id and request.user.is_authenticated and pass != "change" %}
+      {% if pass == "changed" %}
+        <h1>Hasło zostało zmienione.</h1>
+      {% else %}
+        <h1>Dane zostały zmienione.</h1>
+      {% endif %}
+    {% else %}
+      <h2>{% if uid %}Edycja danych{% elif pass == "change" %}Zmień hasło{% else %}Załóż konto{% endif %}</h2>
+      <form method="POST">
+        {% csrf_token %}
+        {% if pass != "change" %}
+          <div class="form-group">
+            <input type="text" name="first_name" value="{{ first_name }}" placeholder="Imię"/>
+          </div>
+          <div class="form-group">
+            <input type="text" name="last_name" value="{{ last_name }}" placeholder="Nazwisko"/>
+          </div>
+          {% if uid == "" %}
+            <div class="form-group">
+              <input type="email" name="email" value="{{ email }}" placeholder="Email"/>
+            </div>
+          {% endif %}
+        {% endif %}
+        <div class="form-group">
+          <input type="password" name="password" placeholder="{% if uid %}Potwierdź hasłem{% else %}Hasło{% endif %}"/>
+        </div>
+        {% if uid == "" or pass == "change" %}
+          <div class="form-group">
+            <input type="password" name="password2" placeholder="Powtórz hasło"/>
+          </div>
+        {% endif %}
 
-      <div class="form-group form-group--buttons">
-        <a href="{% url 'users:login' %}" class="btn btn--without-border">Zaloguj się</a>
-        <button class="btn" type="submit">Załóż konto</button>
-      </div>
-    </form>
+        <div class="form-group form-group--buttons">
+          {% if pass != "change" %}
+            {% if uid == request.user.id %}
+              <a href="{% url 'users:settings' %}?password=change" class="btn btn--without-border">Zmień hasło</a>
+            {% else %}
+              <a href="{% url 'users:login' %}" class="btn btn--without-border">Zaloguj się</a>
+            {% endif %}
+          {% endif %}
+          <button class="btn" type="submit">{% if uid %}Zmień dane{% elif pass == "change" %}Zmień hasło{% else %}Załóż
+            konto{% endif %}</button>
+        </div>
+      </form>
+    {% endif %}
   </section>
 {% endblock content %}

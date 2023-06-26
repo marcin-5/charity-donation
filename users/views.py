@@ -28,14 +28,31 @@ class LoginView(View):
 
 class RegisterView(View):
     def _create_ctx(self, d=None):
-        fields = ("first_name", "last_name", "email", "password")
+        fields = ("first_name", "last_name", "email", "password", "uid", "pass")
         return {key: d.get(key, "") for key in fields} if d else {}
 
     def get(self, request, **kwargs):
+        if request.user.is_authenticated:
+            if request.GET.get("password") == "change":
+                kwargs["pass"] = "change" + "d" * (kwargs.get("pass") is not None)
+            elif "uid" not in kwargs:
+                kwargs["uid"] = request.user.id
+                kwargs.update(Account.objects.filter(id=request.user.id).values("first_name", "last_name")[0])
         return render(request, "users/register.html", context=self._create_ctx(kwargs))
 
     def post(self, request):
         ctx = self._create_ctx(request.POST)
+        if not ctx["email"] and request.user.is_authenticated:
+            if user := Account.objects.filter(pk=request.user.id):
+                if user[0].check_password(ctx["password"]):
+                    user.update(first_name=ctx["first_name"], last_name=ctx["last_name"])
+                    return self.get(request, uid=None)
+                else:
+                    if (p := request.POST.get("password")) == request.POST.get("password2"):
+                        user[0].set_password(p)
+                        user[0].save()
+                        return self.get(request, **{"uid": None, "pass": "changed"})
+            return self.get(request, **ctx)
         return redirect(reverse("users:login")) if Account.objects.create_user(**ctx) else self.get(request, **ctx)
 
 
