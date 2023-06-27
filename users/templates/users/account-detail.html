@@ -30,7 +30,7 @@
       </thead>
       <tbody>
       {% for donation in donations %}
-        <tr>
+        <tr data-is-taken="{{ donation.is_taken|yesno:"1,0" }}" data-id="{{ donation.pk }}">
           <td>{{ donation.quantity }}</td>
           <td>{{ donation.institution.name }}</td>
           <td>{{ donation.categories.all|join:", " }}</td>

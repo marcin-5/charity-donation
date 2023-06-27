@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.db.models import Sum
@@ -97,5 +98,16 @@ def add_donation(request):
 def form_confirmation(request):
     if request.method == "GET":
         return render(request, "home/form-confirmation.html")
+    else:
+        return HttpResponseNotFound("404")
+
+
+@login_required
+def switch_is_taken(request):
+    if request.method == "POST":
+        if donation := Donation.objects.filter(user=request.user, pk=request.POST.get("id")):
+            donation[0].is_taken = not donation[0].is_taken
+            donation[0].save()
+        return JsonResponse({})
     else:
         return HttpResponseNotFound("404")

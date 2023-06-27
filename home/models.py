@@ -40,3 +40,7 @@ class Donation(models.Model):
     pick_up_time = models.TimeField()
     pick_up_comment = models.TextField(blank=True)
     user = models.ForeignKey(Account, null=True, on_delete=models.CASCADE)
+    is_taken = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ("is_taken",)

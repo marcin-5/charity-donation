@@ -458,3 +458,24 @@ function getCookie(name) {
   let cookie = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
   return cookie ? cookie[2] : null;
 }
+
+const trIsTaken = document.querySelectorAll("tr[data-is-taken]");
+trIsTaken.forEach(tr => {
+  trBgColor(tr);
+  tr.addEventListener("click", e => {
+    const data = new FormData();
+    data.append("id", e.target.parentElement.dataset.id);
+    fetch("/is-taken/", {
+      method: "post",
+      headers: {"X-CSRFToken": getCookie("csrftoken"),},
+      body: data
+    })
+      .then((res) => res.json())
+      .then(() => location.reload())
+      .catch(err => console.log(err));
+  });
+});
+
+function trBgColor(tr) {
+  tr.style.backgroundColor = (tr.dataset.isTaken === "1") ? "lightgray" : "white";
+}
