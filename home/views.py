@@ -14,9 +14,6 @@ class LandingPageView(View):
         ctx = {
             "sum_": Donation.objects.aggregate(Sum("quantity"))["quantity__sum"] or 0,
             "len_": Donation.objects.values("institution").distinct().count(),
-            "foundations": Institution.objects.filter(type="F"),
-            "organizations": Institution.objects.filter(type="OP"),
-            "collections": Institution.objects.filter(type="ZL"),
         }
         return render(request, "home/index.html", ctx)
 
