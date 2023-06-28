@@ -84,7 +84,6 @@ class Help {
   changePage(e) {
     e.preventDefault();
     const page = e.target.dataset.page;
-    console.log(page);
     this.generateInstitutionsList(page, this.institutionsType);
   }
 
@@ -102,8 +101,6 @@ class Help {
     this.fetchInstitutionsData(page, type).then(json => {
       this.institutionsPage = json.page;
       this.institutionsData = JSON.parse(json.data);
-      // console.log(this.institutionsPage);
-      // console.log(this.institutionsData);
       const parent = this.$slidesContainers[this.currentSlide-1].querySelector("ul.help--slides-items");
       while (parent.firstElementChild) parent.firstElementChild.remove();
       for (const i in this.institutionsData) {
