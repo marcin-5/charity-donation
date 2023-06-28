@@ -83,8 +83,7 @@ class Help {
    */
   changePage(e) {
     e.preventDefault();
-    const page = e.target.dataset.page;
-    this.generateInstitutionsList(page, this.institutionsType);
+    this.generateInstitutionsList(parseInt(e.target.dataset.page), this.institutionsType);
   }
 
   async fetchInstitutionsData(page = 1, type = "") {
