@@ -18,6 +18,9 @@ class AccountManager(UserManager):
         return user
 
     def create_user(self, email, password=None, **extra_fields):
+        for field in ("uid", "pass", "err", "password2"):
+            if field in extra_fields:
+                del extra_fields[field]
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         return self._create_user(email, password, **extra_fields)

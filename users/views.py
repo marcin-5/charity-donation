@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound
@@ -28,7 +30,7 @@ class LoginView(View):
 
 class RegisterView(View):
     def _create_ctx(self, d=None):
-        fields = ("first_name", "last_name", "email", "password", "uid", "pass")
+        fields = ("first_name", "last_name", "email", "password", "password2", "uid", "pass", "err")
         return {key: d.get(key, "") for key in fields} if d else {}
 
     def get(self, request, **kwargs):
@@ -42,6 +44,22 @@ class RegisterView(View):
 
     def post(self, request):
         ctx = self._create_ctx(request.POST)
+        if not (p := ctx["password"]) or len(p) < 8:
+            ctx["err"] += "Hasło zbyt krótkie.\n"
+        if "password2" in ctx and ctx["password2"] != p:
+            ctx["err"] += "Hasła nie są takie same.\n"
+        if "first_name" in ctx and not ctx["first_name"]:
+            ctx["err"] += "Musisz podać imię.\n"
+        if "last_name" in ctx and not ctx["last_name"]:
+            ctx["err"] += "Musisz podać nazwisko.\n"
+        if "email" in ctx:
+            if not ctx["email"]:
+                ctx["err"] += "Musisz podać email.\n"
+            elif not re.match(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+", ctx["email"]):
+                ctx["err"] += "Email jest nieprawidłowy.\n"
+        if ctx["err"]:
+            ctx["err"] = ctx["err"].split("\n")
+            return self.get(request, **ctx)
         if not ctx["email"] and request.user.is_authenticated:
             if user := Account.objects.filter(pk=request.user.id):
                 if user[0].check_password(ctx["password"]):
@@ -53,7 +71,11 @@ class RegisterView(View):
                         user[0].save()
                         return self.get(request, **{"uid": None, "pass": "changed"})
             return self.get(request, **ctx)
-        return redirect(reverse("users:login")) if Account.objects.create_user(**ctx) else self.get(request, **ctx)
+        return (
+            render(request, "users/login.html", {"email": ctx["email"]})
+            if Account.objects.create_user(**ctx)
+            else self.get(request, **ctx)
+        )
 
 
 @login_required

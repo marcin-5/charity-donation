@@ -28,16 +28,17 @@
           <div class="form-group">
             <input type="text" name="last_name" value="{{ last_name }}" placeholder="Nazwisko"/>
           </div>
-          {% if uid == "" %}
+          {% if not uid %}
             <div class="form-group">
               <input type="email" name="email" value="{{ email }}" placeholder="Email"/>
             </div>
           {% endif %}
         {% endif %}
         <div class="form-group">
-          <input type="password" name="password" placeholder="{% if uid %}Potwierdź hasłem{% else %}Hasło{% endif %}"/>
+          <input type="password" name="password"
+                 placeholder="{% if uid %}Potwierdź hasłem{% elif pass == "change" %}Nowe hasło{% else %}Hasło{% endif %}"/>
         </div>
-        {% if uid == "" or pass == "change" %}
+        {% if not uid or pass == "change" %}
           <div class="form-group">
             <input type="password" name="password2" placeholder="Powtórz hasło"/>
           </div>
@@ -45,7 +46,7 @@
 
         <div class="form-group form-group--buttons">
           {% if pass != "change" %}
-            {% if uid == request.user.id %}
+            {% if uid and uid == request.user.id %}
               <a href="{% url 'users:settings' %}?password=change" class="btn btn--without-border">Zmień hasło</a>
             {% else %}
               <a href="{% url 'users:login' %}" class="btn btn--without-border">Zaloguj się</a>
@@ -55,6 +56,9 @@
             konto{% endif %}</button>
         </div>
       </form>
+      {% if err %}
+        {% for e in err %}<p style="color: indianred; font-size: medium">{{ e }}</p>{% endfor %}
+      {% endif %}
     {% endif %}
   </section>
 {% endblock content %}
