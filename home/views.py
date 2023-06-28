@@ -23,11 +23,7 @@ class AddDonationView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return redirect(reverse("users:login"))
-        ctx = {
-            "categories": Category.objects.all(),
-            "institutions": Institution.objects.all(),
-        }
-        return render(request, "home/form.html", ctx)
+        return render(request, "home/form.html", {"categories": Category.objects.all()})
 
 
 def get_institutions(request):
