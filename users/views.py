@@ -57,9 +57,6 @@ class RegisterView(View):
                 ctx["err"] += "Musisz podać email.\n"
             elif not re.match(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+", ctx["email"]):
                 ctx["err"] += "Email jest nieprawidłowy.\n"
-        if ctx["err"]:
-            ctx["err"] = ctx["err"].split("\n")
-            return self.get(request, **ctx)
         if not ctx["email"] and request.user.is_authenticated:
             if user := Account.objects.filter(pk=request.user.id):
                 if user[0].check_password(ctx["password"]):
@@ -70,6 +67,9 @@ class RegisterView(View):
                         user[0].set_password(p)
                         user[0].save()
                         return self.get(request, **{"uid": None, "pass": "changed"})
+            return self.get(request, **ctx)
+        if ctx["err"]:
+            ctx["err"] = ctx["err"].split("\n")
             return self.get(request, **ctx)
         return (
             render(request, "users/login.html", {"email": ctx["email"]})
